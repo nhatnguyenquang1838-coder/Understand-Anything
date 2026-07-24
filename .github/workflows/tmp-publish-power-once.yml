@@ -1,5 +1,5 @@
 name: Publish UA Power once
-# publication-trigger: 1
+# publication-trigger: 2
 
 on:
   push:
