@@ -1,0 +1,10 @@
+apiVersion: dw.superapps/v1
+kind: PowerRuntimeConfig
+metadata:
+  powerId: ua
+spec:
+  outputLanguage: en
+  autoUpdate: false
+  reviewMode: deterministic
+  worktreeRedirect: true
+  additionalExcludePatterns: []
