@@ -1,0 +1,67 @@
+apiVersion: dw.superapps/v1
+kind: PowerDistribution
+metadata:
+  id: ua
+  name: Understand Anything
+  description: Headless semantic codebase analysis skill and its verified runtime dependencies.
+spec:
+  source:
+    repository: nhatnguyenquang1838-coder/Understand-Anything
+    defaultRef: main
+  package:
+    entrypoints:
+      - understand-anything-plugin/skills/understand/SKILL.md
+    managedPaths:
+      - LICENSE
+      - SOURCE.lock.json
+      - understand-anything-plugin/package.json
+      - understand-anything-plugin/pnpm-workspace.yaml
+      - understand-anything-plugin/pnpm-lock.yaml
+      - understand-anything-plugin/agents
+      - understand-anything-plugin/skills/understand
+      - understand-anything-plugin/packages/core
+      - understand-anything-plugin/packages/tree-sitter-dart-wasm
+      - understand-anything-plugin/packages/tree-sitter-swift-wasm
+    runtimeTemplates: true
+  include:
+    - LICENSE
+    - SOURCE.lock.json
+    - understand-anything-plugin/package.json
+    - understand-anything-plugin/pnpm-workspace.yaml
+    - understand-anything-plugin/pnpm-lock.yaml
+    - understand-anything-plugin/tsconfig.json
+    - understand-anything-plugin/agents/**
+    - understand-anything-plugin/skills/understand/**
+    - understand-anything-plugin/packages/core/**
+    - understand-anything-plugin/packages/tree-sitter-dart-wasm/**
+    - understand-anything-plugin/packages/tree-sitter-swift-wasm/**
+  exclude:
+    - "**/node_modules/**"
+    - "**/dist/**"
+    - "**/coverage/**"
+    - "**/.cache/**"
+    - "**/__pycache__/**"
+    - "**/*.pyc"
+    - "**/*.log"
+    - understand-anything-plugin/packages/core/test/**
+    - understand-anything-plugin/packages/core/tests/**
+  forbidden:
+    paths:
+      - ".github/**"
+      - ".ua/**"
+      - ".understand-anything/**"
+      - "apps/**"
+      - "docs/superpowers/**"
+      - "tests/**"
+      - "understand-anything-plugin/packages/dashboard/**"
+      - "understand-anything-plugin/packages/vscode-extension/**"
+      - "understand-anything-plugin/apps/**"
+      - "**/screenshots/**"
+      - "**/marketing/**"
+      - "**/examples/generated/**"
+    contentPatterns:
+      - "(?i)BEGIN [A-Z ]*PRIVATE KEY"
+      - "(?i)(api[_-]?key|token|secret)\\s*[:=]\\s*['\"][^'\"]{12,}['\"]"
+  runtime:
+    dataRoot: .ua
+    configRequired: false
