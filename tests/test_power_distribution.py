@@ -12,16 +12,19 @@ from jsonschema import Draft202012Validator
 ROOT = Path(__file__).resolve().parents[1]
 LOCK_SHA = "6ae71878beb50226a1e4b7e2f52ac6468c86f74b"
 WORKFLOW_PATH = ROOT / ".github" / "workflows" / "sync-and-publish.yml"
+README_PATH = ROOT / "distribution" / "README.md"
 
 
 class UAPowerDistributionTests(unittest.TestCase):
-    def test_source_lock_is_exact_and_manual(self) -> None:
+    def test_source_policy_is_fork_authoritative(self) -> None:
         lock = json.loads((ROOT / "SOURCE.lock.json").read_text(encoding="utf-8"))
+        self.assertEqual(2, lock["schemaVersion"])
         self.assertEqual("nhatnguyenquang1838-coder/Understand-Anything", lock["controlledRepository"])
         self.assertEqual("Egonex-AI/Understand-Anything", lock["upstreamRepository"])
         self.assertEqual(LOCK_SHA, lock["controlledSha"])
         self.assertEqual(LOCK_SHA, lock["upstreamSha"])
-        self.assertEqual("manual-review-required", lock["lockPolicy"])
+        self.assertEqual("fork-authoritative-upstream-advisory", lock["lockPolicy"])
+        self.assertIn("never blocks", lock["notes"])
 
     def test_recipe_is_headless_and_allowlist_only(self) -> None:
         recipe = yaml.safe_load((ROOT / "distribution/power-package.yaml").read_text(encoding="utf-8"))
@@ -81,7 +84,7 @@ class UAPowerDistributionTests(unittest.TestCase):
             check=False,
         )
 
-    def test_upstream_checker_is_current_for_locked_shas(self) -> None:
+    def test_status_is_current_for_baseline_shas(self) -> None:
         result = self.run_checker(
             "--controlled-sha",
             LOCK_SHA,
@@ -91,60 +94,62 @@ class UAPowerDistributionTests(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stderr)
         report = json.loads(result.stdout)
         self.assertEqual("CURRENT", report["status"])
-        self.assertFalse(report["controlledDriftAllowed"])
-
-    def test_controlled_drift_fails_closed_without_publish_override(self) -> None:
-        result = self.run_checker(
-            "--controlled-sha",
-            "1" * 40,
-            "--upstream-sha",
-            LOCK_SHA,
+        self.assertEqual(
+            "nhatnguyenquang1838-coder/Understand-Anything",
+            report["publicationAuthority"]["repository"],
         )
-        self.assertEqual(3, result.returncode)
-        report = json.loads(result.stdout)
-        self.assertEqual("DRIFT_DETECTED", report["status"])
-        self.assertFalse(report["controlledDriftAllowed"])
+        self.assertFalse(report["publicationBlocked"])
 
-    def test_controlled_drift_is_allowed_for_publish_only(self) -> None:
+    def test_controlled_fork_advance_is_non_blocking(self) -> None:
         result = self.run_checker(
             "--controlled-sha",
             "1" * 40,
             "--upstream-sha",
             LOCK_SHA,
-            "--allow-controlled-drift",
         )
         self.assertEqual(0, result.returncode, result.stderr)
         report = json.loads(result.stdout)
-        self.assertEqual("CONTROLLED_DRIFT_ALLOWED", report["status"])
+        self.assertEqual("FORK_ADVANCED", report["status"])
         self.assertTrue(report["controlled"]["drift"])
-        self.assertFalse(report["upstream"]["drift"])
-        self.assertTrue(report["controlledDriftAllowed"])
-        self.assertFalse(report["lockMovementAuthorized"])
+        self.assertFalse(report["controlled"]["blocking"])
+        self.assertFalse(report["publicationBlocked"])
 
-    def test_upstream_drift_still_fails_with_controlled_override(self) -> None:
+    def test_vendor_drift_is_advisory(self) -> None:
         result = self.run_checker(
             "--controlled-sha",
             "1" * 40,
             "--upstream-sha",
             "2" * 40,
-            "--allow-controlled-drift",
         )
-        self.assertEqual(3, result.returncode)
+        self.assertEqual(0, result.returncode, result.stderr)
         report = json.loads(result.stdout)
-        self.assertEqual("DRIFT_DETECTED", report["status"])
+        self.assertEqual("UPSTREAM_UPDATE_AVAILABLE", report["status"])
         self.assertTrue(report["upstream"]["drift"])
-        self.assertFalse(report["controlledDriftAllowed"])
+        self.assertFalse(report["upstream"]["blocking"])
+        self.assertTrue(report["vendorUpdateAvailable"])
+        self.assertFalse(report["publicationBlocked"])
         self.assertFalse(report["lockMovementAuthorized"])
 
-    def test_workflow_enables_controlled_drift_only_for_publication(self) -> None:
+    def test_workflow_decouples_vendor_status_from_publication(self) -> None:
         text = WORKFLOW_PATH.read_text(encoding="utf-8")
         publish_condition = (
             "${{ github.event_name == 'push' || "
             "(github.event_name == 'workflow_dispatch' && inputs.publish) }}"
         )
-        self.assertIn(f"ALLOW_CONTROLLED_DRIFT: {publish_condition}", text)
-        self.assertIn("args+=(--allow-controlled-drift)", text)
+        self.assertIn("name: Publish UA Power from controlled fork", text)
+        self.assertIn("vendor_status:", text)
+        self.assertIn("Report vendor drift (advisory only)", text)
+        self.assertIn("continue-on-error: true", text)
+        self.assertNotIn("needs: vendor_status", text)
         self.assertIn(f"if: {publish_condition}", text)
+        self.assertIn("distribution_branch: power-dist", text)
+        self.assertIn("publish_distribution_branch: true", text)
+
+    def test_distribution_readme_states_vendor_is_non_blocking(self) -> None:
+        text = README_PATH.read_text(encoding="utf-8")
+        self.assertIn("publication source of truth", text)
+        self.assertIn("vendor drift", text)
+        self.assertIn("never blocks", text)
 
 
 if __name__ == "__main__":

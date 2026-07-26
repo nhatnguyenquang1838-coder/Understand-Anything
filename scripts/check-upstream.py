@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+SUPPORTED_POLICY = "fork-authoritative-upstream-advisory"
 
 
 class DriftError(RuntimeError):
@@ -33,8 +34,8 @@ def load_lock(path: Path) -> dict[str, Any]:
     for field in ("controlledSha", "upstreamSha"):
         if not SHA_RE.fullmatch(str(data[field])):
             raise DriftError(f"{field} must be a full lowercase commit SHA")
-    if data["lockPolicy"] != "manual-review-required":
-        raise DriftError("lockPolicy must be manual-review-required")
+    if data["lockPolicy"] != SUPPORTED_POLICY:
+        raise DriftError(f"lockPolicy must be {SUPPORTED_POLICY}")
     return data
 
 
@@ -58,15 +59,15 @@ def ls_remote(repository: str, ref: str) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Detect controlled-fork and upstream drift without moving SOURCE.lock.json.")
+    parser = argparse.ArgumentParser(
+        description=(
+            "Report controlled-fork and vendor drift. The controlled fork is the publication "
+            "authority; vendor drift is advisory and never blocks publication."
+        )
+    )
     parser.add_argument("--lock", default="SOURCE.lock.json")
     parser.add_argument("--controlled-sha", help="offline/test override for the observed controlled branch SHA")
-    parser.add_argument("--upstream-sha", help="offline/test override for the observed upstream branch SHA")
-    parser.add_argument(
-        "--allow-controlled-drift",
-        action="store_true",
-        help="Allow the controlled fork to advance while continuing to fail closed on upstream drift.",
-    )
+    parser.add_argument("--upstream-sha", help="offline/test override for the observed vendor branch SHA")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
 
@@ -80,39 +81,45 @@ def main() -> int:
 
         controlled_drift = controlled != lock["controlledSha"]
         upstream_drift = upstream != lock["upstreamSha"]
-        controlled_drift_allowed = bool(
-            args.allow_controlled_drift and controlled_drift and not upstream_drift
-        )
+
+        status = "CURRENT"
+        if upstream_drift:
+            status = "UPSTREAM_UPDATE_AVAILABLE"
+        elif controlled_drift:
+            status = "FORK_ADVANCED"
 
         report = {
-            "status": "CURRENT",
+            "status": status,
             "lockPolicy": lock["lockPolicy"],
+            "publicationAuthority": {
+                "repository": lock["controlledRepository"],
+                "ref": lock["controlledRef"],
+                "observedSha": controlled,
+            },
             "controlled": {
                 "repository": lock["controlledRepository"],
                 "ref": lock["controlledRef"],
-                "lockedSha": lock["controlledSha"],
+                "baselineSha": lock["controlledSha"],
                 "observedSha": controlled,
                 "drift": controlled_drift,
+                "blocking": False,
             },
             "upstream": {
                 "repository": lock["upstreamRepository"],
                 "ref": lock["upstreamRef"],
-                "lockedSha": lock["upstreamSha"],
+                "baselineSha": lock["upstreamSha"],
                 "observedSha": upstream,
                 "drift": upstream_drift,
+                "blocking": False,
             },
-            "controlledDriftAllowed": controlled_drift_allowed,
+            "vendorUpdateAvailable": upstream_drift,
+            "publicationBlocked": False,
             "lockMovementAuthorized": False,
         }
 
-        if upstream_drift or (controlled_drift and not args.allow_controlled_drift):
-            report["status"] = "DRIFT_DETECTED"
-        elif controlled_drift_allowed:
-            report["status"] = "CONTROLLED_DRIFT_ALLOWED"
-
         output = json.dumps(report, indent=2, sort_keys=True)
         print(output if args.json else output)
-        return 3 if report["status"] == "DRIFT_DETECTED" else 0
+        return 0
     except (OSError, json.JSONDecodeError, DriftError) as exc:
         print(f"upstream-check: {exc}", file=sys.stderr)
         return 2

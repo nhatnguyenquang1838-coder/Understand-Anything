@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "provider": "ua",
   "controlledRepository": "nhatnguyenquang1838-coder/Understand-Anything",
   "controlledRef": "main",
@@ -7,7 +7,7 @@
   "upstreamRepository": "Egonex-AI/Understand-Anything",
   "upstreamRef": "main",
   "upstreamSha": "6ae71878beb50226a1e4b7e2f52ac6468c86f74b",
-  "lockPolicy": "manual-review-required",
+  "lockPolicy": "fork-authoritative-upstream-advisory",
   "distributionContract": "dw.superapps/v1",
-  "notes": "The controlled fork and upstream were identical when this lock was recorded. Scheduled checks may detect drift but must not move this lock automatically."
+  "notes": "The controlled fork main branch is the UA publication authority. controlledSha and upstreamSha are provenance baselines only. Vendor drift is advisory and never blocks fork development, release publication, or power-dist synchronization."
 }
