@@ -31,7 +31,16 @@ jobs:
         with:
           python-version: "3.12"
       - name: Verify source lock and detect drift
-        run: python scripts/check-upstream.py --json
+        shell: bash
+        env:
+          ALLOW_CONTROLLED_DRIFT: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish) }}
+        run: |
+          set -euo pipefail
+          args=(--json)
+          if [[ "$ALLOW_CONTROLLED_DRIFT" == "true" ]]; then
+            args+=(--allow-controlled-drift)
+          fi
+          python scripts/check-upstream.py "${args[@]}"
 
   publish:
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish)
