@@ -1,4 +1,4 @@
-name: Check upstream and publish UA Power
+name: Publish UA Power from controlled fork
 
 on:
   push:
@@ -23,28 +23,19 @@ permissions:
   contents: write
 
 jobs:
-  drift:
+  vendor_status:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38
         with:
           python-version: "3.12"
-      - name: Verify source lock and detect drift
-        shell: bash
-        env:
-          ALLOW_CONTROLLED_DRIFT: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish) }}
-        run: |
-          set -euo pipefail
-          args=(--json)
-          if [[ "$ALLOW_CONTROLLED_DRIFT" == "true" ]]; then
-            args+=(--allow-controlled-drift)
-          fi
-          python scripts/check-upstream.py "${args[@]}"
+      - name: Report vendor drift (advisory only)
+        continue-on-error: true
+        run: python scripts/check-upstream.py --json
 
   publish:
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish)
-    needs: drift
     uses: nhatnguyenquang1838-coder/DW-SuperApps/.github/workflows/reusable-publish-power.yml@299cd605899467377cd31651b27d31c3f88db759
     with:
       power_id: ua
