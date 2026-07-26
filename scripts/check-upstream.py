@@ -62,6 +62,11 @@ def main() -> int:
     parser.add_argument("--lock", default="SOURCE.lock.json")
     parser.add_argument("--controlled-sha", help="offline/test override for the observed controlled branch SHA")
     parser.add_argument("--upstream-sha", help="offline/test override for the observed upstream branch SHA")
+    parser.add_argument(
+        "--allow-controlled-drift",
+        action="store_true",
+        help="Allow the controlled fork to advance while continuing to fail closed on upstream drift.",
+    )
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
 
@@ -72,6 +77,13 @@ def main() -> int:
         for label, value in (("controlled", controlled), ("upstream", upstream)):
             if not SHA_RE.fullmatch(value):
                 raise DriftError(f"{label} observed SHA must be a full lowercase commit SHA")
+
+        controlled_drift = controlled != lock["controlledSha"]
+        upstream_drift = upstream != lock["upstreamSha"]
+        controlled_drift_allowed = bool(
+            args.allow_controlled_drift and controlled_drift and not upstream_drift
+        )
+
         report = {
             "status": "CURRENT",
             "lockPolicy": lock["lockPolicy"],
@@ -80,19 +92,24 @@ def main() -> int:
                 "ref": lock["controlledRef"],
                 "lockedSha": lock["controlledSha"],
                 "observedSha": controlled,
-                "drift": controlled != lock["controlledSha"],
+                "drift": controlled_drift,
             },
             "upstream": {
                 "repository": lock["upstreamRepository"],
                 "ref": lock["upstreamRef"],
                 "lockedSha": lock["upstreamSha"],
                 "observedSha": upstream,
-                "drift": upstream != lock["upstreamSha"],
+                "drift": upstream_drift,
             },
+            "controlledDriftAllowed": controlled_drift_allowed,
             "lockMovementAuthorized": False,
         }
-        if report["controlled"]["drift"] or report["upstream"]["drift"]:
+
+        if upstream_drift or (controlled_drift and not args.allow_controlled_drift):
             report["status"] = "DRIFT_DETECTED"
+        elif controlled_drift_allowed:
+            report["status"] = "CONTROLLED_DRIFT_ALLOWED"
+
         output = json.dumps(report, indent=2, sort_keys=True)
         print(output if args.json else output)
         return 3 if report["status"] == "DRIFT_DETECTED" else 0
