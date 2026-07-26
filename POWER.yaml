@@ -3,7 +3,7 @@ kind: PowerPackage
 metadata:
   id: ua
   name: Understand Anything
-  version: main-20260725.1-c0e4821
+  version: ua-main-3-4d5fda706fc9683d097cedc947a02011f11baa38
   description: Headless semantic codebase analysis skill and its verified runtime
     dependencies.
 spec:

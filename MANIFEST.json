@@ -10,26 +10,26 @@
     {
       "mode": "0600",
       "path": "POWER.yaml",
-      "sha256": "042ca2f2305dcfb8319674d0fa17de0d1404fa47f1543bcbd2ef5ba99c30741a",
-      "size": 802
+      "sha256": "605b24e25773c036543bf137a7ae29bbf79ac466efd8048b350ca9d251024909",
+      "size": 829
     },
     {
       "mode": "0600",
       "path": "SOURCE.json",
-      "sha256": "3dd41e1eb5d4ad58e5c17d421707d5638b241ddb04845ddde08037dd1e53c386",
+      "sha256": "7a07e5a806b130c952d64945b056b58a776f57cd764f85ccfd6938cfd083d7a6",
       "size": 203
     },
     {
       "mode": "0644",
       "path": "SOURCE.lock.json",
-      "sha256": "27385a849b5955cfcb93c5b0abb58ac2feb193e6638fa4ca2e967ada6a969d29",
-      "size": 608
+      "sha256": "0f96d258c289be01105bfea94aeb847fcb0ab435ec1164d79c37e3a032c6d66d",
+      "size": 706
     },
     {
       "mode": "0600",
       "path": "VERSION",
-      "sha256": "36fb4beae86ae5c23c17aae944310e19b09dee3d02ac0c7455c6c2e1efb99265",
-      "size": 24
+      "sha256": "8d839ebe6d7e5554088a1ff1b39377058109f6f8106b0b8e23de0f4e9dbe48a5",
+      "size": 51
     },
     {
       "mode": "0755",
@@ -1501,8 +1501,8 @@
     "powerId": "ua",
     "sourceRef": "main",
     "sourceRepository": "nhatnguyenquang1838-coder/Understand-Anything",
-    "sourceSha": "c0e4821c519f564d6c8b353537cf121eb52a1617",
-    "version": "main-20260725.1-c0e4821"
+    "sourceSha": "4d5fda706fc9683d097cedc947a02011f11baa38",
+    "version": "ua-main-3-4d5fda706fc9683d097cedc947a02011f11baa38"
   },
   "spec": {
     "entrypoints": [
