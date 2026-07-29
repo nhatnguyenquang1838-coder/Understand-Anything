@@ -13,6 +13,7 @@ spec:
   package:
     entrypoints:
       - understand-anything-plugin/skills/understand/SKILL.md
+      - scripts/power_help.py
     managedPaths:
       - LICENSE
       - SOURCE.lock.json
@@ -25,6 +26,7 @@ spec:
       - understand-anything-plugin/packages/dashboard
       - understand-anything-plugin/packages/tree-sitter-dart-wasm
       - understand-anything-plugin/packages/tree-sitter-swift-wasm
+      - scripts/power_help.py
     runtimeTemplates: true
   include:
     - LICENSE
@@ -39,6 +41,7 @@ spec:
     - understand-anything-plugin/packages/dashboard/**
     - understand-anything-plugin/packages/tree-sitter-dart-wasm/**
     - understand-anything-plugin/packages/tree-sitter-swift-wasm/**
+    - scripts/power_help.py
   exclude:
     - "**/node_modules/**"
     - "**/dist/**"
