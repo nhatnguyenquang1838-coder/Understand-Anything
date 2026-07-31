@@ -1,13 +1,25 @@
-# Understand Anything skills-only distribution
+# Understand Anything Power distribution
 
-This provider recipe packages the headless `understand` skill, its agent definitions,
-bundled helper scripts, core analyzer package, and the two workspace WASM grammar
-packages required by `@understand-anything/core`.
+This provider recipe packages the core `understand` producer skill and the companion
+skills that consume or extend its `.ua/knowledge-graph.json` output:
+
+- `understand-chat`
+- `understand-explain`
+- `understand-diff`
+- `understand-dashboard`
+- `understand-domain`
+- `understand-onboard`
+- `understand-knowledge`
+- `understand-figma`
+
+The package also includes the agent definitions, bundled helper scripts, core analyzer,
+dashboard runtime package, and the two workspace WASM grammar packages required by
+`@understand-anything/core`.
 
 It intentionally excludes:
 
-- the graph dashboard and all web UI;
 - the VS Code extension;
+- standalone application source outside the packaged dashboard runtime;
 - marketing assets and screenshots;
 - generated `.ua` or legacy `.understand-anything` data;
 - historical plans/specs and repository test fixtures.
@@ -23,4 +35,6 @@ is advisory only. It never blocks controlled-fork development, release publicati
 reviewed pull requests when they are useful.
 
 Installation creates an empty consumer-owned `.ua/` runtime root. It does not analyze a
-repository, launch a dashboard, create a task, open a branch, or publish an issue.
+repository, launch the dashboard automatically, create a task, open a branch, or publish
+an issue. Companion skills become available to configured hosts through the package
+entrypoint list; they operate only when explicitly invoked.
