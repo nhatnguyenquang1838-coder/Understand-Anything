@@ -3,16 +3,25 @@ kind: PowerDistribution
 metadata:
   id: ua
   name: Understand Anything
-  description: Semantic codebase analysis skill, dashboard visualization, and verified runtime dependencies.
+  description: Semantic codebase analysis, companion graph skills, dashboard visualization, and verified runtime dependencies.
 spec:
   source:
     repository: nhatnguyenquang1838-coder/Understand-Anything
     defaultRef: main
   capabilities:
     dashboard: true
+    companionSkills: true
   package:
     entrypoints:
       - understand-anything-plugin/skills/understand/SKILL.md
+      - understand-anything-plugin/skills/understand-chat/SKILL.md
+      - understand-anything-plugin/skills/understand-explain/SKILL.md
+      - understand-anything-plugin/skills/understand-diff/SKILL.md
+      - understand-anything-plugin/skills/understand-dashboard/SKILL.md
+      - understand-anything-plugin/skills/understand-domain/SKILL.md
+      - understand-anything-plugin/skills/understand-onboard/SKILL.md
+      - understand-anything-plugin/skills/understand-knowledge/SKILL.md
+      - understand-anything-plugin/skills/understand-figma/SKILL.md
       - scripts/power_help.py
     managedPaths:
       - LICENSE
@@ -22,6 +31,14 @@ spec:
       - understand-anything-plugin/pnpm-lock.yaml
       - understand-anything-plugin/agents
       - understand-anything-plugin/skills/understand
+      - understand-anything-plugin/skills/understand-chat
+      - understand-anything-plugin/skills/understand-explain
+      - understand-anything-plugin/skills/understand-diff
+      - understand-anything-plugin/skills/understand-dashboard
+      - understand-anything-plugin/skills/understand-domain
+      - understand-anything-plugin/skills/understand-onboard
+      - understand-anything-plugin/skills/understand-knowledge
+      - understand-anything-plugin/skills/understand-figma
       - understand-anything-plugin/packages/core
       - understand-anything-plugin/packages/dashboard
       - understand-anything-plugin/packages/tree-sitter-dart-wasm
@@ -37,6 +54,14 @@ spec:
     - understand-anything-plugin/tsconfig.json
     - understand-anything-plugin/agents/**
     - understand-anything-plugin/skills/understand/**
+    - understand-anything-plugin/skills/understand-chat/**
+    - understand-anything-plugin/skills/understand-explain/**
+    - understand-anything-plugin/skills/understand-diff/**
+    - understand-anything-plugin/skills/understand-dashboard/**
+    - understand-anything-plugin/skills/understand-domain/**
+    - understand-anything-plugin/skills/understand-onboard/**
+    - understand-anything-plugin/skills/understand-knowledge/**
+    - understand-anything-plugin/skills/understand-figma/**
     - understand-anything-plugin/packages/core/**
     - understand-anything-plugin/packages/dashboard/**
     - understand-anything-plugin/packages/tree-sitter-dart-wasm/**
