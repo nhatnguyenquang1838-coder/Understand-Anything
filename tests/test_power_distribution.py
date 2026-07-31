@@ -14,6 +14,18 @@ LOCK_SHA = "6ae71878beb50226a1e4b7e2f52ac6468c86f74b"
 WORKFLOW_PATH = ROOT / ".github" / "workflows" / "sync-and-publish.yml"
 README_PATH = ROOT / "distribution" / "README.md"
 
+SKILLS = [
+    "understand",
+    "understand-chat",
+    "understand-explain",
+    "understand-diff",
+    "understand-dashboard",
+    "understand-domain",
+    "understand-onboard",
+    "understand-knowledge",
+    "understand-figma",
+]
+
 
 class UAPowerDistributionTests(unittest.TestCase):
     def test_source_policy_is_fork_authoritative(self) -> None:
@@ -26,25 +38,33 @@ class UAPowerDistributionTests(unittest.TestCase):
         self.assertEqual("fork-authoritative-upstream-advisory", lock["lockPolicy"])
         self.assertIn("never blocks", lock["notes"])
 
-    def test_recipe_is_headless_and_allowlist_only(self) -> None:
+    def test_recipe_packages_core_and_companion_skills(self) -> None:
         recipe = yaml.safe_load((ROOT / "distribution/power-package.yaml").read_text(encoding="utf-8"))
         self.assertEqual("ua", recipe["metadata"]["id"])
         self.assertEqual(".ua", recipe["spec"]["runtime"]["dataRoot"])
-        self.assertEqual(
-            ["understand-anything-plugin/skills/understand/SKILL.md"],
-            recipe["spec"]["package"]["entrypoints"],
-        )
+        self.assertTrue(recipe["spec"]["capabilities"]["dashboard"])
+        self.assertTrue(recipe["spec"]["capabilities"]["companionSkills"])
+
+        expected_entrypoints = [
+            f"understand-anything-plugin/skills/{skill}/SKILL.md" for skill in SKILLS
+        ] + ["scripts/power_help.py"]
+        self.assertEqual(expected_entrypoints, recipe["spec"]["package"]["entrypoints"])
+
         include = "\n".join(recipe["spec"]["include"])
-        self.assertIn("skills/understand/**", include)
+        managed = "\n".join(recipe["spec"]["package"]["managedPaths"])
+        for skill in SKILLS:
+            self.assertIn(f"skills/{skill}/**", include)
+            self.assertIn(f"skills/{skill}", managed)
         self.assertIn("packages/core/**", include)
-        self.assertNotIn("dashboard", include.lower())
+        self.assertIn("packages/dashboard/**", include)
+
         forbidden = "\n".join(recipe["spec"]["forbidden"]["paths"]).lower()
-        self.assertIn("dashboard", forbidden)
         self.assertIn("vscode-extension", forbidden)
+        self.assertIn("understand-anything-plugin/apps", forbidden)
 
     def test_skill_runtime_dependencies_exist(self) -> None:
         required = [
-            "understand-anything-plugin/skills/understand/SKILL.md",
+            *(f"understand-anything-plugin/skills/{skill}/SKILL.md" for skill in SKILLS),
             "understand-anything-plugin/skills/understand/generate-ignore.mjs",
             "understand-anything-plugin/skills/understand/scan-project.mjs",
             "understand-anything-plugin/skills/understand/compute-batches.mjs",
@@ -58,6 +78,7 @@ class UAPowerDistributionTests(unittest.TestCase):
             "understand-anything-plugin/agents/tour-builder.md",
             "understand-anything-plugin/agents/graph-reviewer.md",
             "understand-anything-plugin/packages/core/package.json",
+            "understand-anything-plugin/packages/dashboard/package.json",
             "understand-anything-plugin/packages/tree-sitter-dart-wasm/package.json",
             "understand-anything-plugin/packages/tree-sitter-swift-wasm/package.json",
         ]
@@ -72,12 +93,7 @@ class UAPowerDistributionTests(unittest.TestCase):
 
     def run_checker(self, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
-            [
-                sys.executable,
-                str(ROOT / "scripts/check-upstream.py"),
-                *args,
-                "--json",
-            ],
+            [sys.executable, str(ROOT / "scripts/check-upstream.py"), *args, "--json"],
             cwd=ROOT,
             text=True,
             capture_output=True,
@@ -85,12 +101,7 @@ class UAPowerDistributionTests(unittest.TestCase):
         )
 
     def test_status_is_current_for_baseline_shas(self) -> None:
-        result = self.run_checker(
-            "--controlled-sha",
-            LOCK_SHA,
-            "--upstream-sha",
-            LOCK_SHA,
-        )
+        result = self.run_checker("--controlled-sha", LOCK_SHA, "--upstream-sha", LOCK_SHA)
         self.assertEqual(0, result.returncode, result.stderr)
         report = json.loads(result.stdout)
         self.assertEqual("CURRENT", report["status"])
@@ -101,12 +112,7 @@ class UAPowerDistributionTests(unittest.TestCase):
         self.assertFalse(report["publicationBlocked"])
 
     def test_controlled_fork_advance_is_non_blocking(self) -> None:
-        result = self.run_checker(
-            "--controlled-sha",
-            "1" * 40,
-            "--upstream-sha",
-            LOCK_SHA,
-        )
+        result = self.run_checker("--controlled-sha", "1" * 40, "--upstream-sha", LOCK_SHA)
         self.assertEqual(0, result.returncode, result.stderr)
         report = json.loads(result.stdout)
         self.assertEqual("FORK_ADVANCED", report["status"])
@@ -115,12 +121,7 @@ class UAPowerDistributionTests(unittest.TestCase):
         self.assertFalse(report["publicationBlocked"])
 
     def test_vendor_drift_is_advisory(self) -> None:
-        result = self.run_checker(
-            "--controlled-sha",
-            "1" * 40,
-            "--upstream-sha",
-            "2" * 40,
-        )
+        result = self.run_checker("--controlled-sha", "1" * 40, "--upstream-sha", "2" * 40)
         self.assertEqual(0, result.returncode, result.stderr)
         report = json.loads(result.stdout)
         self.assertEqual("UPSTREAM_UPDATE_AVAILABLE", report["status"])
@@ -150,6 +151,8 @@ class UAPowerDistributionTests(unittest.TestCase):
         self.assertIn("publication source of truth", text)
         self.assertIn("vendor drift", text)
         self.assertIn("never blocks", text)
+        for skill in SKILLS[1:]:
+            self.assertIn(f"`{skill}`", text)
 
 
 if __name__ == "__main__":
